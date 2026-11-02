@@ -1,0 +1,60 @@
+name: Nirvana CI (Unified Security)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fase1_cerebro/**'
+      - 'templates/nirvana-fase1-detection/detections/**'
+      - 'templates/nirvana-Fase2-DevSecOps/sample-app/**'
+      - '.github/workflows/nirvana-ci.yml'
+  pull_request:
+    branches: [main]
+
+jobs:
+  # 1. Validar Reglas Sigma (Fase 1)
+  validate-sigma:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Sigma
+        run: pip install sigma-cli
+      - name: Sigma check
+        run: sigma check --fail-on-issues templates/nirvana-fase1-detection/detections/
+
+  # 2. Escanear el código nuevo de la IA (Cerebro)
+  sast-ai:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run Semgrep on AI Code
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/python
+          generateSarif: "1"
+        continue-on-error: true
+
+  # 3. Escanear código Node.js (Fase 2 - SAST/SCA)
+  sca-node:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: |
+          cd templates/nirvana-Fase2-DevSecOps/sample-app
+          npm install
+      - name: Install Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_Linux-64bit.tar.gz
+          tar zxvf trivy_0.76.0_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+      - name: Run Trivy (SCA)
+        run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 templates/nirvana-Fase2-DevSecOps/sample-app/
+        continue-on-error: true
