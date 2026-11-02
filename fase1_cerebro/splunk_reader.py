@@ -7,6 +7,10 @@ import time
 import hashlib
 from dotenv import load_dotenv
 
+# --- IMPORTACIÓN MODULAR ---
+from config import OLLAMA_URL, MODEL, SYSTEM_PROMPT, VERDICT_SCHEMA
+# ---------------------------
+
 load_dotenv()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -16,30 +20,8 @@ SPLUNK_USER = os.getenv("SPLUNK_USER", "admin")
 SPLUNK_PASS = os.getenv("SPLUNK_PASS")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
-MODEL = "qwen2.5:3b"
-
 # Memoria a largo plazo (JSON)
 DB_FILE = "sent_alerts.json"
-
-SYSTEM_PROMPT = """You are a SOC triage assistant. You receive a security event.
-You MUST respond ONLY with a JSON object with this exact schema:
-{
-  "verdict": "malicious" | "suspicious" | "benign",
-  "severity": "critical" | "high" | "medium" | "low",
-  "reason": "short explanation (max 2 sentences)"
-}"""
-
-VERDICT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "verdict": {"type": "string", "enum": ["malicious", "suspicious", "benign"]},
-        "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
-        "reason": {"type": "string"}
-    },
-    "required": ["verdict", "severity", "reason"],
-    "additionalProperties": False  # Bloquea cualquier clave extra
-}
 
 def load_sent_alerts():
     if os.path.exists(DB_FILE):
@@ -80,7 +62,7 @@ def ask_ollama(event_text, max_retries=3):
             # Parseamos el JSON
             parsed_result = json.loads(content)
             
-            # Validamos contra el Schema estricto
+            # Validamos contra el Schema estricto importado de config.py
             jsonschema.validate(instance=parsed_result, schema=VERDICT_SCHEMA)
             
             # Si llega aquí, es 100% válido
@@ -162,14 +144,20 @@ def get_recent_alerts():
                         
                         ai_verdict = ask_ollama(raw_event)
                         
+                        # --- LA NUEVA CONDICIÓN MÁGICA ---
                         if ai_verdict:
                             print("\n=== 🤖 VEREDICTO DE LA IA ===")
                             print(json.dumps(ai_verdict, indent=2))
-                            send_to_slack(raw_event, ai_verdict)
                             
-                            # Guardamos el ID para no repetirlo nunca más
-                            save_sent_alert(alert_id)
-                            new_alerts_count += 1
+                            if ai_verdict['verdict'] in ['malicious', 'suspicious']:
+                                send_to_slack(raw_event, ai_verdict)
+                            else:
+                                print("[-] La IA determinó que es BENIGNO. Ignorando alerta en Slack para evitar ruido.")
+                        # ---------------------------------
+                            
+                        # Guardamos el ID para no repetirlo nunca más (sea benigno o malicioso)
+                        save_sent_alert(alert_id)
+                        new_alerts_count += 1
             
             if new_alerts_count == 0:
                 print("[-] No hay alertas nuevas en los últimos 5 minutos.")
@@ -180,7 +168,7 @@ def get_recent_alerts():
         print(f"❌ Error de conexión: {e}")
 
 if __name__ == "__main__":
-    print("[*] Iniciando SOC Assistant (Validación JSON + Reintentos)...")
+    print("[*] Iniciando SOC Assistant (Filtro de Ruido Activado)...")
     print("[*] Presiona Ctrl+C para detenerlo.")
     
     while True:
