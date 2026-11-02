@@ -1,0 +1,23 @@
+title: Linux Reverse Shell Execution
+id: 9a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+status: experimental
+description: Detecta comandos comunes utilizados para abrir un reverse shell en Linux. (Desplegado por GitHub Actions).
+author: Tu Nombre
+date: 2026/10/26
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection:
+    CommandLine|contains:
+      - '/dev/tcp/'
+      - 'bash -i >&'
+      - 'nc -e /bin/sh'
+      - 'python -c "import pty'
+  condition: selection
+falsepositives:
+  - Scripts administrativos legítimos de red
+level: critical
+tags:
+  - attack.execution
+  - attack.t1059.004

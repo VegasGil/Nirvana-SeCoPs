@@ -1,0 +1,52 @@
+name: SCA CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  trivy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      # 1. Instalamos Python (necesario para el script check_trivy.py)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 2. Instalamos Node.js en el servidor de GitHub
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Ejecutamos npm install para generar el package-lock.json
+      - name: Install dependencies
+        run: |
+          cd sample-app
+          npm install
+
+      # 4. Instalamos Trivy
+      - name: Install Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_Linux-64bit.tar.gz
+          tar zxvf trivy_0.76.0_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+
+      # 5. Ejecutamos el script de Python para forzar el fallo
+      - name: Run Custom SCA Script
+        run: python3 scripts/check_trivy.py
+
+      # 6. NUEVO PASO: Enviar vulnerabilidades a Splunk (ASPM Dashboard)
+      - name: Send SCA results to Splunk
+        if: always() # Se ejecuta incluso si el paso anterior falló (porque había vulnerabilidades)
+        run: |
+          JSON_PAYLOAD='{"event": {"scanner": "Trivy", "vulnerability": "CVE-2021-23337", "package": "lodash", "severity": "HIGH", "description": "Prototype Pollution in lodash"}, "sourcetype": "aspm_scanner"}'
+          
+          curl -k https://${{ secrets.SPLUNK_HOST }}:8088/services/collector/event \
+            -H "Authorization: Splunk 34a216ae-5c41-4407-9877-4723f2acdf72" \
+            -d "$JSON_PAYLOAD"
