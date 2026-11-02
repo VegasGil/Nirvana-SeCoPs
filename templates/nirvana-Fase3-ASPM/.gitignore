@@ -2,3 +2,4 @@ aspm/data/
 .venv/
 __pycache__/
 trivy_results.json
+fase1_cerebro/.venv/
