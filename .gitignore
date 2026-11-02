@@ -6,3 +6,5 @@ __pycache__/
 fase1_cerebro/.venv/
 aspm/data/
 trivy_results.json
+watermark.txt
+sent_alerts.json
