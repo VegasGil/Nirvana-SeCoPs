@@ -1,8 +1,8 @@
-# Configurar
-@"
 .venv/
 __pycache__/
 *.pyc
 .env
 *.log
-"@ | Out-File -FilePath .gitignore -Encoding utf8
+fase1_cerebro/.venv/
+aspm/data/
+trivy_results.json
