@@ -3,6 +3,7 @@
 *.env
 !.env.example
 
+
 # Python
 __pycache__/
 *.py[cod]
@@ -21,3 +22,7 @@ _legacy/
 # OS
 .DS_Store
 Thumbs.db
+
+# Ignorar correos reales, pero permitir el de prueba
+data/samples/*.eml
+!data/samples/test_email.eml

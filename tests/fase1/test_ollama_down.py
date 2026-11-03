@@ -1,7 +1,7 @@
 """Simula Ollama caído: triage() debe agotar retries y lanzar RuntimeError."""
 import pytest
 
-import fase1_cerebro.soc_assistant as sa
+import bot1_cerebro.soc_assistant as sa
 
 
 def test_ollama_down_raises_runtime_error(monkeypatch):

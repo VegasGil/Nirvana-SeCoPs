@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-import fase2_siem.orchestrator as orch
+import bot2_siem.orchestrator as orch
 
 
 @pytest.fixture(autouse=True)
@@ -16,14 +16,14 @@ def isolated_state(tmp_path, monkeypatch):
 @pytest.fixture
 def mock_splunk(mocker):
     """Mockea hec_send y search del modulo splunk_client (ya importados en orchestrator)."""
-    hec = mocker.patch("fase2_siem.orchestrator.hec_send")
-    search = mocker.patch("fase2_siem.orchestrator.search")
+    hec = mocker.patch("bot2_siem.orchestrator.hec_send")
+    search = mocker.patch("bot2_siem.orchestrator.search")
     return hec, search
 
 
 @pytest.fixture
 def mock_triage(mocker):
-    return mocker.patch("fase2_siem.orchestrator.triage")
+    return mocker.patch("bot2_siem.orchestrator.triage")
 
 
 def _row(event_id="evt-1", **extra):

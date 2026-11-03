@@ -6,9 +6,9 @@ from pathlib import Path
 
 from jsonschema import ValidationError, validate
 
-from fase1_cerebro.event_schema import INPUT_SCHEMA, normalize_event
-from fase1_cerebro.soc_assistant import triage
-from fase2_siem.splunk_client import hec_send, search
+from bot1_cerebro.event_schema import INPUT_SCHEMA, normalize_event
+from bot1_cerebro.soc_assistant import triage
+from bot2_siem.splunk_client import hec_send, search
 
 log = logging.getLogger("orchestrator")
 

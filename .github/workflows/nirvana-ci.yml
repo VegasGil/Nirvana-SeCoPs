@@ -3,11 +3,19 @@ name: Nirvana CI (Unified Security)
 on:
   push:
     branches: [main]
+    paths:
+      - 'bot1_cerebro/**'
+      - 'bot2_siem/**'
+      - 'bot3_intel/**'
+      - 'bot4_human_vector/**'
+      - 'tools/**'
+      - 'tests/**'
+      - '.github/workflows/nirvana-ci.yml'
   pull_request:
     branches: [main]
 
 jobs:
-  # 1. Validar Reglas Sigma (Fase 1)
+  # 1. Validar Reglas Sigma
   validate-sigma:
     runs-on: ubuntu-24.04
     steps:
@@ -18,7 +26,8 @@ jobs:
       - name: Install Sigma
         run: pip install sigma-cli
       - name: Sigma check
-        run: sigma check --fail-on-issues fase1_cerebro/detections/ || echo "No hay reglas Sigma en fase1_cerebro"
+        # Ajusta la ruta si tus reglas sigma están en bot1_cerebro
+        run: sigma check --fail-on-issues bot1_cerebro/detections/ || echo "No hay reglas Sigma en bot1_cerebro"
 
   # 2. Escanear el código de la IA con Semgrep (SAST)
   sast-ai:
@@ -31,7 +40,7 @@ jobs:
           config: p/python
         continue-on-error: true
 
-  # 3. Escanear código Node.js en Fase 2 (SCA)
+  # 3. Escanear código Node.js (SCA)
   sca-node:
     runs-on: ubuntu-24.04
     steps:
@@ -42,7 +51,7 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         run: |
-          cd fase2_siem/sample-app || cd fase2_siem || exit 0
+          cd bot2_siem/sample-app || cd bot2_siem || exit 0
           npm install || exit 0
         continue-on-error: true
       - name: Install Trivy
@@ -51,10 +60,10 @@ jobs:
           tar zxvf trivy_0.76.0_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/
       - name: Run Trivy (SCA)
-        run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 fase2_siem/ || echo "No hay paquete Node en fase2_siem o Trivy falló"
+        run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 bot2_siem/ || echo "No hay paquete Node o Trivy falló"
         continue-on-error: true
 
-  # 4. Ejecutar Tests Unitarios (Apuntando a tu carpeta tests/)
+  # 4. Ejecutar Tests Unitarios
   test-python:
     runs-on: ubuntu-24.04
     steps:

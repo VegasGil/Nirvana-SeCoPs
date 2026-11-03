@@ -3,14 +3,14 @@ import json
 
 import pytest
 
-import fase2_siem.splunk_client as sc
+import bot2_siem.splunk_client as sc
 
 
 # ---------- hec_send ----------
 
 def test_hec_send_success(mocker, monkeypatch):
     monkeypatch.setattr(sc, "HEC_TOKEN", "fake-token")
-    mock_post = mocker.patch("fase2_siem.splunk_client.requests.post")
+    mock_post = mocker.patch("bot2_siem.splunk_client.requests.post")
     mock_post.return_value.raise_for_status = lambda: None
     mock_post.return_value.json.return_value = {"text": "Success", "code": 0}
 
@@ -26,7 +26,7 @@ def test_hec_send_success(mocker, monkeypatch):
 
 def test_hec_send_raises_on_hec_error(mocker, monkeypatch):
     monkeypatch.setattr(sc, "HEC_TOKEN", "fake-token")
-    mock_post = mocker.patch("fase2_siem.splunk_client.requests.post")
+    mock_post = mocker.patch("bot2_siem.splunk_client.requests.post")
     mock_post.return_value.raise_for_status = lambda: None
     mock_post.return_value.json.return_value = {"text": "Invalid token", "code": 4}
 
@@ -43,7 +43,7 @@ def test_hec_send_raises_without_token(monkeypatch):
 # ---------- search ----------
 
 def test_search_parses_streaming_response(mocker):
-    mock_post = mocker.patch("fase2_siem.splunk_client.requests.post")
+    mock_post = mocker.patch("bot2_siem.splunk_client.requests.post")
     mock_post.return_value.raise_for_status = lambda: None
     # Splunk export devuelve NDJSON: lineas {result:{...}} o {preview:false}
     mock_post.return_value.text = "\n".join([
@@ -60,7 +60,7 @@ def test_search_parses_streaming_response(mocker):
 
 
 def test_search_skips_invalid_json_lines(mocker):
-    mock_post = mocker.patch("fase2_siem.splunk_client.requests.post")
+    mock_post = mocker.patch("bot2_siem.splunk_client.requests.post")
     mock_post.return_value.raise_for_status = lambda: None
     mock_post.return_value.text = "not-json\n" + json.dumps({"result": {"ok": 1}}) + "\n"
 
@@ -70,7 +70,7 @@ def test_search_skips_invalid_json_lines(mocker):
 
 
 def test_search_prepends_search_command(mocker):
-    mock_post = mocker.patch("fase2_siem.splunk_client.requests.post")
+    mock_post = mocker.patch("bot2_siem.splunk_client.requests.post")
     mock_post.return_value.raise_for_status = lambda: None
     mock_post.return_value.text = ""
 
@@ -81,7 +81,7 @@ def test_search_prepends_search_command(mocker):
 
 
 def test_search_does_not_duplicate_search_prefix(mocker):
-    mock_post = mocker.patch("fase2_siem.splunk_client.requests.post")
+    mock_post = mocker.patch("bot2_siem.splunk_client.requests.post")
     mock_post.return_value.raise_for_status = lambda: None
     mock_post.return_value.text = ""
 

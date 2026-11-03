@@ -1,4 +1,4 @@
-"""Configuración pytest: añade la raíz al sys.path para importar fase1_cerebro.*"""
+"""Configuración pytest: añade la raíz al sys.path para importar bot1_cerebro.*"""
 import sys
 from pathlib import Path
 

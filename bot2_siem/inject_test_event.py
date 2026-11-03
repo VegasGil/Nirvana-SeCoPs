@@ -3,7 +3,7 @@
 import argparse
 import time
 
-from fase2_siem.splunk_client import hec_send
+from bot2_siem.splunk_client import hec_send
 
 EVENT_TEMPLATE = {
     "event_id": None,           # se rellena por iteracion

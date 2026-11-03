@@ -3,7 +3,7 @@
 import logging
 import time
 
-from fase2_siem.orchestrator import run_once
+from bot2_siem.orchestrator import run_once
 
 POLL_INTERVAL_SECONDS = 30
 

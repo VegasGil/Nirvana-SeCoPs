@@ -1,7 +1,7 @@
 """Valida normalize_event: defaults, descarte de claves desconocidas, rechazo de no-dict."""
 import pytest
 
-from fase1_cerebro.event_schema import normalize_event
+from bot1_cerebro.event_schema import normalize_event
 
 
 def test_defaults_applied():
