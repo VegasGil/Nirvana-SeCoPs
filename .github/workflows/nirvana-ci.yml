@@ -67,8 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest jsonschema requests python-dotenv pytest-mock
-          # Si tienes un requirements.txt, usa: pip install -r requirements.txt 
+          pip install -r requirements.txt 
       - name: Run Pytest
         run: |
           # Ejecutamos pytest apuntando a la carpeta 'tests'
