@@ -7,7 +7,21 @@ on:
     branches: [main]
 
 jobs:
-  # 1. Escanear el código nuevo de la IA (Cerebro)
+  # 1. Validar Reglas Sigma (Fase 1)
+  validate-sigma:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Sigma
+        run: pip install sigma-cli
+      - name: Sigma check
+        # Apunta a la carpeta donde tengas las reglas Sigma (ajusta si es necesario)
+        run: sigma check --fail-on-issues fase1_cerebro/detections/ || echo "No hay reglas Sigma en fase1_cerebro"
+
+  # 2. Escanear el código de la IA con Semgrep (SAST)
   sast-ai:
     runs-on: ubuntu-24.04
     steps:
@@ -18,7 +32,30 @@ jobs:
           config: p/python
         continue-on-error: true
 
-  # 2. Ejecutar Tests Unitarios (El Golden Dataset)
+  # 3. Escanear código Node.js en Fase 2 (SCA)
+  sca-node:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: |
+          cd fase2_siem/sample-app || cd fase2_siem
+          npm install
+        continue-on-error: true
+      - name: Install Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_Linux-64bit.tar.gz
+          tar zxvf trivy_0.76.0_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+      - name: Run Trivy (SCA)
+        run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 fase2_siem/
+        continue-on-error: true
+
+  # 4. Ejecutar Tests Unitarios (Apuntando a tu carpeta tests/)
   test-python:
     runs-on: ubuntu-24.04
     steps:
@@ -30,9 +67,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest jsonschema requests
+          pip install pytest jsonschema requests python-dotenv
+          # Si tienes un requirements.txt, usa: pip install -r requirements.txt
       - name: Run Pytest
         run: |
-          # Nos movemos a la carpeta del cerebro para correr los tests
-          cd fase1_cerebro
-          python -m pytest test_ai.py -v || echo "No hay tests configurados aún para pytest"
+          # Ejecutamos pytest apuntando a la carpeta 'tests'
+          # El archivo conftest.py que tienes ahí se encargará de arreglar las rutas de importación
+          python -m pytest tests/ -v
