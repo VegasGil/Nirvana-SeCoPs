@@ -26,8 +26,13 @@ def load_checkpoint() -> str:
     return "-15m"
 
 
-def save_checkpoint(last_time: str) -> None:
-    STATE_FILE.write_text(json.dumps({"last_time": last_time}))
+def save_checkpoint(last_time: str):
+    # Convertimos el formato de Splunk al formato ISO 8601 que entiende su API
+    try:
+        clean_time = last_time.replace(" GMT", "").replace(" ", "T") + "Z"
+    except:
+        clean_time = last_time
+    STATE_FILE.write_text(json.dumps({"last_time": clean_time}))
 
 
 # ---------------- Mapeo Splunk -> canonico ----------------
