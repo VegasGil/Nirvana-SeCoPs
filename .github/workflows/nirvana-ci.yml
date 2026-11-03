@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'fase1_cerebro/**'
+      - 'fase2_siem/**'
+      - 'tests/**'
       - 'templates/nirvana-fase1-detection/detections/**'
       - 'templates/nirvana-Fase2-DevSecOps/sample-app/**'
       - '.github/workflows/nirvana-ci.yml'
@@ -58,3 +60,20 @@ jobs:
       - name: Run Trivy (SCA)
         run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 templates/nirvana-Fase2-DevSecOps/sample-app/
         continue-on-error: true
+
+  # 4. Ejecutar Tests Unitarios (Fase 1 + Fase 2)
+  test-python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Pytest
+        run: |
+          python -m pytest tests/ -v

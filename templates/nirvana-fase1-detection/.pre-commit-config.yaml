@@ -1,9 +1,0 @@
-repos:
-  - repo: local
-    hooks:
-      - id: sigma-check
-        name: sigma check
-        entry: sigma check --fail-on-issues
-        language: system
-        files: ^detections/.*\.ya?ml$
-        pass_filenames: true

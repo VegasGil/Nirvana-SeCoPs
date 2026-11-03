@@ -1,10 +1,23 @@
-.venv/
-__pycache__/
-*.pyc
+# Secretos
 .env
-*.log
-fase1_cerebro/.venv/
-aspm/data/
-trivy_results.json
-watermark.txt
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Runtime
 sent_alerts.json
+state.json
+*.log
+
+# Legacy (no va al portafolio)
+_legacy/
+
+# OS
+.DS_Store
+Thumbs.db

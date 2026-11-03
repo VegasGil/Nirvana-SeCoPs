@@ -1,0 +1,35 @@
+"""Valida que VERDICT_SCHEMA rechaza outputs inválidos del modelo."""
+import json
+
+import pytest
+from jsonschema import ValidationError, validate
+
+from fase1_cerebro.soc_assistant import VERDICT_SCHEMA
+
+
+def _validate(payload: dict):
+    validate(instance=payload, schema=VERDICT_SCHEMA)
+
+
+def test_happy_path():
+    _validate({"verdict": "malicious", "severity": "high", "reason": "invoice.exe from external domain"})
+
+
+def test_enum_invalid():
+    with pytest.raises(ValidationError):
+        _validate({"verdict": "evil", "severity": "high", "reason": "bad enum"})
+
+
+def test_extra_key():
+    with pytest.raises(ValidationError):
+        _validate({"verdict": "benign", "severity": "low", "reason": "ok", "extra": 1})
+
+
+def test_missing_key():
+    with pytest.raises(ValidationError):
+        _validate({"verdict": "benign", "severity": "low"})
+
+
+def test_empty_reason():
+    with pytest.raises(ValidationError):
+        _validate({"verdict": "benign", "severity": "low", "reason": ""})

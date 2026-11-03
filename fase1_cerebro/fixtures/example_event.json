@@ -1,0 +1,14 @@
+{
+  "event_id": "evt-0001",
+  "source": "email",
+  "timestamp": "2026-11-02T10:15:00Z",
+  "src": "ceo@evil-domain.tld",
+  "dst": "cfo@corp.local",
+  "summary": "Urgent invoice request with executable attachment",
+  "iocs": ["evil-domain.tld", "invoice.exe"],
+  "raw": {
+    "subject": "Urgent invoice",
+    "attachment": "invoice.exe",
+    "body_snippet": "Please pay immediately, do not call."
+  }
+}
