@@ -12,7 +12,7 @@ def _validate(payload: dict):
 
 
 def test_happy_path():
-    _validate({"verdict": "malicious", "severity": "high", "reason": "invoice.exe from external domain","recommendation": "Isolate the host and block the sender"})
+    _validate({"verdict": "malicious", "severity": "high", "mitre_technique": "T1059: Command and Scripting Interpreter", "reason": "invoice.exe from external domain","recommendation": "Isolate the host and block the sender"})
 
 
 def test_enum_invalid():

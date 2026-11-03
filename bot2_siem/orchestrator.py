@@ -43,7 +43,7 @@ def send_to_slack(event_text, ai_verdict, source_name):
         "blocks": [
             {"type": "header", "text": {"type": "plain_text", "text": f"🚨 Alerta SOC - {source_name}"}},
             {"type": "section", "text": {"type": "mrkdwn", "text": f"*Evento:*\n`{event_text}`"}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": f"*Veredicto:* {ai_verdict['verdict'].upper()}\n*Severidad:* {ai_verdict['severity'].upper()}\n*Razón:* {ai_verdict['reason']}"}},
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"*Veredicto:* {ai_verdict['verdict'].upper()}\n*Severidad:* {ai_verdict['severity'].upper()}\n*MITRE ATT&CK:* {ai_verdict.get('mitre_technique', 'N/A')}\n*Razón:* {ai_verdict['reason']}"}},
             {"type": "actions", "elements": [
                 {"type": "button", "text": {"type": "plain_text", "text": "✅ Aprobar"}, "style": "primary", "value": "approve"},
                 {"type": "button", "text": {"type": "plain_text", "text": "🚫 Ignorar"}, "style": "danger", "value": "ignore"}
@@ -109,11 +109,13 @@ def process_batch(rows: list[dict]) -> dict:
                 send_to_slack(event_text, verdict, event.get("source", "Unknown"))
             
             # Guardar en Splunk
+                      # Guardar en Splunk
             output = {
                 "event_id": eid,
                 "source_kind": event["source"],
                 "verdict": verdict["verdict"],
                 "severity": verdict["severity"],
+                "mitre_technique": verdict.get("mitre_technique", "N/A"), # <-- NUEVO
                 "reason": verdict["reason"],
                 "recommendation": verdict.get("recommendation", "None"),
                 "model": "qwen2.5:3b",
