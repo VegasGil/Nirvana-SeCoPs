@@ -18,7 +18,6 @@ jobs:
       - name: Install Sigma
         run: pip install sigma-cli
       - name: Sigma check
-        # Apunta a la carpeta donde tengas las reglas Sigma (ajusta si es necesario)
         run: sigma check --fail-on-issues fase1_cerebro/detections/ || echo "No hay reglas Sigma en fase1_cerebro"
 
   # 2. Escanear el código de la IA con Semgrep (SAST)
@@ -33,9 +32,8 @@ jobs:
         continue-on-error: true
 
   # 3. Escanear código Node.js en Fase 2 (SCA)
-   sca-node:
+  sca-node:
     runs-on: ubuntu-24.04
-    continue-on-error: true # <--- Esto evita que el workflow se ponga rojo
     steps:
       - uses: actions/checkout@v5
       - name: Setup Node.js
@@ -46,13 +44,15 @@ jobs:
         run: |
           cd fase2_siem/sample-app || cd fase2_siem || exit 0
           npm install || exit 0
+        continue-on-error: true
       - name: Install Trivy
         run: |
           wget https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_Linux-64bit.tar.gz
           tar zxvf trivy_0.76.0_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/
       - name: Run Trivy (SCA)
-        run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 fase2_siem/ || exit 0
+        run: trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 fase2_siem/ || echo "No hay paquete Node en fase2_siem o Trivy falló"
+        continue-on-error: true
 
   # 4. Ejecutar Tests Unitarios (Apuntando a tu carpeta tests/)
   test-python:
@@ -66,9 +66,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt 
+          pip install -r requirements.txt
       - name: Run Pytest
         run: |
-          # Ejecutamos pytest apuntando a la carpeta 'tests'
-          # El archivo conftest.py que tienes ahí se encargará de arreglar las rutas de importación
           python -m pytest tests/ -v
