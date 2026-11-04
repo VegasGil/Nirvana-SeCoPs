@@ -62,7 +62,11 @@ def hec_send(event: dict, sourcetype: str = "nirvana:secops:verdict",
 def search(query: str, earliest: str = "-15m", latest: str = "now", max_retries=15) -> list[dict]:
     if not query.strip().lower().startswith("search "):
         query = "search " + query.strip()
-        
+    
+    # ARREGLO: Convertir fecha de Splunk ("2026-11-04 12:02:39.000 GMT") a ISO ("2026-11-04T12:02:39Z")
+    if "GMT" in earliest:
+        earliest = earliest.replace(" GMT", "").replace(" ", "T") + "Z"
+
     data = {
         "search": query,
         "output_mode": "json",

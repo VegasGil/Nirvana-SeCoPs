@@ -142,7 +142,7 @@ def process_batch(rows: list[dict]) -> dict:
 def run_once() -> dict:
     last_time = load_checkpoint()
     q = f'index=* sourcetype="{SRC_SOURCETYPE}" | sort 0 _time'
-    rows = search(q, earliest="-15m")
+    rows = search(q, earliest=last_time)
     return process_batch(rows)
 
 if __name__ == "__main__":

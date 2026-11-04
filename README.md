@@ -8,7 +8,7 @@
 
 **Nirvana-SeCoPs** es una plataforma de automatización de SOC (SOAR) que integra **SIEM (Splunk)**, **Inteligencia Artificial Local (Ollama)** y **Threat Intelligence** para clasificar, enriquecer y responder a alertas de seguridad, manteniendo siempre al humano en el bucle de decisión (*Human-in-the-loop*).
 
-> 🎥 **[Mira el video demo aquí]** *(Próximamente - Pega aquí el enlace de tu YouTube/Loom)*
+> 🎥 **[Mira el video demo aquí]** *(Próximamente - YouTube/Loom)*
 
 ## 🏗️ Arquitectura del Flujo (Microservicios)
 
