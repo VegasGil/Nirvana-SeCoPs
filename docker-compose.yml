@@ -1,0 +1,38 @@
+services:
+  splunk:
+    image: splunk/splunk:latest
+    container_name: splunk-local
+    environment:
+      - SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=TuPasswordSeguro123
+      - SPLUNK_HEC_TOKEN=f9b6646b-d857-4bfc-8008-6bbccd1f9ba5
+      - SPLUNK_HEC_SSL=false
+    ports:
+      - "8000:8000"
+      - "8088:8088"
+      - "8089:8089"
+    volumes:
+      - splunk-var:/opt/splunk/var
+      - splunk-etc:/opt/splunk/etc
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8089/services/server/info"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  app:
+    build: .
+    container_name: nirvana-app
+    depends_on:
+      - splunk
+    env_file:
+      - .env.demo
+    volumes:
+      - ./data:/app/data
+    command: sh -c "sleep 40 && python -m tools.simulator"
+
+volumes:
+  splunk-var:
+  splunk-etc:

@@ -79,3 +79,23 @@ jobs:
       - name: Run Pytest
         run: |
           python -m pytest tests/ -v
+  # 5. Validación de Infraestructura (Dockerfile)
+  validate-docker:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Lint Dockerfile (Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: Scan Dockerfile with Trivy (IaC)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          hide-progress: false
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'

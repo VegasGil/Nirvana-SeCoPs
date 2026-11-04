@@ -23,6 +23,7 @@ CRITICAL RULES:
 - Reverse shells (e.g., '/dev/tcp/', 'nc -e') -> ALWAYS malicious, MITRE T1059.
 - SQL Injection (e.g., 'OR 1=1') -> ALWAYS malicious, MITRE T1190.
 - PowerShell downloading from the internet -> ALWAYS malicious, MITRE T1059.001.
+- Brute Force (e.g., 'Failed password', 'multiple failed logins', '5 intentos') -> ALWAYS suspicious, MITRE T1110.
 - Normal HTTP traffic -> ALWAYS benign, MITRE N/A.
 """
 

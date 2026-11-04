@@ -3,7 +3,6 @@
 *.env
 !.env.example
 
-
 # Python
 __pycache__/
 *.py[cod]
@@ -26,3 +25,7 @@ Thumbs.db
 # Ignorar correos reales, pero permitir el de prueba
 data/samples/*.eml
 !data/samples/test_email.eml
+
+# Docker
+docker-compose.override.yml
+splunk_cert.pem

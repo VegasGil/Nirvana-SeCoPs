@@ -4,7 +4,7 @@ import json
 import pytest
 from jsonschema import ValidationError, validate
 
-from bot1_cerebro.soc_assistant import VERDICT_SCHEMA
+from bot1_cerebro.config import VERDICT_SCHEMA
 
 
 def _validate(payload: dict):
