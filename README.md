@@ -1,61 +1,78 @@
-#  Nirvana-SeCoPs: AI-Assisted SOC Triage & Enrichment Platform
+# 🛡️ Nirvana-SeCoPs: AI-Assisted SOC & SOAR Platform
 
-[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![Ollama](https://img.shields.io/badge/AI-Ollama%20(Local)-orange.svg)](https://ollama.com/)
 [![Splunk](https://img.shields.io/badge/SIEM-Splunk-green.svg)](https://www.splunk.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Nirvana-SeCoPs** es un proyecto de portafolio que demuestra la construcción de una arquitectura SOC moderna, integrando **Detección (SIEM), Automatización (SOAR) e Inteligencia Artificial (LLM)** local para la clasificación, enriquecimiento y triaje de alertas de seguridad, manteniendo siempre al humano en el bucle de decisión (*Human-in-the-loop*).
+**Nirvana-SeCoPs** es una plataforma de automatización de SOC (SOAR) que integra **SIEM (Splunk)**, **Inteligencia Artificial Local (Ollama)** y **Threat Intelligence** para clasificar, enriquecer y responder a alertas de seguridad, manteniendo siempre al humano en el bucle de decisión (*Human-in-the-loop*).
 
-##  Arquitectura del Flujo
+> 🎥 **[Mira el video demo aquí]** *(Próximamente - Pega aquí el enlace de tu YouTube/Loom)*
 
-El proyecto está diseñado de forma modular para procesar telemetría de múltiples fuentes y enriquecerla con inteligencia de amenazas.
+## 🏗️ Arquitectura del Flujo (Microservicios)
+
+El proyecto está diseñado de forma modular. Cada "Bot" tiene una responsabilidad única, lo que permite escalarlo sin romper el sistema.
 
 ```mermaid
 graph LR
-    A[Linux Logs] -->|Ingesta| B(Splunk)
-    C[MS Defender] -->|Ingesta| B
-    D[Trivy ASPM] -->|Ingesta| B
-    B -->|Extrae Eventos| E(Orquestador Python)
-    E <-->|API| F[EPSS & CISA KEV]
-    E -->|Analiza Contexto| G(IA Local - Ollama)
-    G -->|Veredicto JSON| E
-    E -->|Guarda Evidencia| B
-    E -->|Alerta HITL| H[Slack]
+    A[Email / Logs] -->|Ingesta| B(Bot 4: Human Vector)
+    B -->|Extrae IOCs| C(Bot 3: Threat Intel)
+    C <-->|API| VT[VirusTotal]
+    B -->|Envía Contexto| D(Bot 1: Cerebro / Ollama)
+    D -->|Veredicto JSON| E(Bot 2: SIEM / Splunk)
+    E -->|Indexa Alerta| E
+    D -->|Alerta HITL| F[Slack / Human-in-the-loop]
 
- Componentes Principales
+🤖 Los Bots (Componentes)
 
-    Orquestador (splunk_reader.py): El núcleo del sistema. Busca alertas en Splunk (Logs de Linux, Defender, Trivy), evita duplicados usando memoria local (sent_alerts.json) y coordina el flujo.
+    Bot 1 (Cerebro): Utiliza el LLM local qwen2.5:3b vía Ollama. Recibe el evento, lo analiza con reglas MITRE ATT&CK y devuelve un JSON estricto (verdict, severity, reason, recommendation).
 
-    Cerebro IA (config.py / Ollama): Utiliza el LLM local qwen2.5:3b. Recibe el evento, lo analiza basándose en reglas heurísticas (MITRE ATT&CK) y devuelve un JSON estricto (verdict, severity, reason).
+    Bot 2 (SIEM): Cliente en Python para interactuar con la API REST y el HEC de Splunk. Lee eventos, procesa veredictos y evita duplicados usando checkpointing.
 
-    Threat Intel (threat_intel.py): Enriquecimiento automático cruzando las vulnerabilidades (CVEs) con las bases de datos de EPSS (probabilidad de exploit) y CISA KEV (explotación activa).
+    Bot 3 (Threat Intel): Integración con la API de VirusTotal para el enriquecimiento de IOCs.
 
-    Feedback Loop (Splunk HEC): Los veredictos generados por la IA se inyectan de vuelta en Splunk para auditoría y compliance.
+    Bot 4 (Human Vector): Parser de correos electrónicos (.eml), extracción de IOCs e integración con Slack.
 
-    Human-in-the-loop (Slack): Notificación en tiempo real con botones de acción (Aprobar / Ignorar / Escalar) para evitar la fatiga de alertas.
+🚀 Despliegue Rápido (Docker)
 
- Estado del Proyecto (Roadmap)
+Este proyecto está 100% dockerizado. Puedes levantar todo el laboratorio (Splunk local + Bots) en tu propia computadora con un solo comando.
+Opción A: Modo Demo (Sin GPU / Sin Ollama)
 
-    ☑
+Ideal para probar el flujo rápidamente. Usa una IA simulada (Mock) para generar veredictos.
 
-    Fase 1 (El Cerebro): Integración con Ollama, validación de esquemas JSON estrictos y resiliencia (retries).
-    ☑
+    Clona el repositorio:
+    bash
 
-    Fase 2 (El SIEM): Conexión con Splunk, lectura por ventana de tiempo (checkpointing) e inyección de veredictos vía HEC.
-    ☑
+    git clone https://github.com/tu-usuario/nirvana-secops.git
+    cd nirvana-secops
 
-    Fase 3 (Multi-Fuente e Intel): Ingesta de Logs, Defender y Trivy. Enriquecimiento con CISA KEV/EPSS y notificaciones a Slack.
-    □
+    Levanta el laboratorio:
+    bash
 
-    Fase 4 (Red/Endpoint): Integración en vivo con Suricata (IDS) y Microsoft Defender (Live Response API).
-    □
+    docker compose up -d
 
-    Fase 5 (Acciones Automáticas): Implementación de un endpoint (Webhook) para recibir las respuestas de Slack y automatizar bloqueos o aislamientos de máquinas.
+    Accede a Splunk en tu navegador: http://localhost:8000 (User: admin, Pass: TuPasswordSeguro123).
 
- Evaluación de la IA (Golden Dataset)
+    Ejecuta el simulador de ataques:
+    bash
 
-El prompt del LLM ha sido evaluado contra un dataset de 7 eventos que simulan técnicas MITRE ATT&CK (Ransomware, SQLi, Reverse Shells, Cryptojacking, etc.) mediante el script test_ai.py.
+    docker compose run --rm app python -m tools.simulator
+
+Opción B: Modo Producción (Con IA Real)
+
+Si tienes Ollama instalado y una GPU, puedes usar el modelo real qwen2.5:3b.
+
+    En el archivo .env.demo, cambia AI_PROVIDER=mock por AI_PROVIDER=ollama.
+
+    Levanta el laboratorio:
+    bash
+
+    docker compose up -d --build
+
+🧠 Evaluación de la IA (Golden Dataset)
+
+El prompt del LLM ha sido evaluado contra un dataset de 7 eventos MITRE ATT&CK (Ransomware, SQLi, Reverse Shells, Cryptojacking, etc.) mediante tools/benchmark_ai.py.
 
     Precisión: 7/7 (100%)
 
@@ -63,35 +80,7 @@ El prompt del LLM ha sido evaluado contra un dataset de 7 eventos que simulan t�
 
     Latencia: ~4 segundos por evento en GPU (RTX 3050 Ti).
 
- Instalación y Uso (Entorno Local)
-
-    Clona el repositorio e instala las dependencias:
-    bash
-
-    pip install -r requirements.txt
-
-    Configura tus variables de entorno en un archivo .env:
-    env
-
-    SPLUNK_HOST=82.70.86.75
-    SPLUNK_PORT=8089
-    SPLUNK_USER=admin
-    SPLUNK_PASS=tu_contraseña
-    HEC_TOKEN=tu_hec_token
-    SLACK_WEBHOOK_URL=tu_webhook
-
-    Inicia Ollama y asegúrate de tener el modelo descargado:
-    bash
-
-    ollama run qwen2.5:3b
-
-    Ejecuta el orquestador principal:
-    bash
-
-    cd fase1_cerebro
-    python splunk_reader.py
-
- Testing y CI/CD
+🧪 Testing y CI/CD
 
 El proyecto cuenta con un pipeline de GitHub Actions (.github/workflows/nirvana-ci.yml) que valida:
 
@@ -99,6 +88,6 @@ El proyecto cuenta con un pipeline de GitHub Actions (.github/workflows/nirvana-
 
     Semgrep (SAST): Análisis estático de seguridad en el código Python.
 
-    Sigma/Trivy: Validación de reglas de detección y escaneo de vulnerabilidades (SCA).
+    Sigma/Trivy: Validación de reglas de detección y escaneo de vulnerabilidades.
 
-Desarrollado por Freddy Vegas como parte de su portafolio de Seguridad y DevSecOps.
+Desarrollado por Freddy Vegas como parte de su portafolio de Ciberseguridad y DevSecOps.
