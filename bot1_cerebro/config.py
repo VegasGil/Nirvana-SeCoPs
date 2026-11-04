@@ -12,7 +12,7 @@ You MUST respond ONLY with a JSON object with this exact schema:
 {
   "verdict": "malicious" | "suspicious" | "benign",
   "severity": "critical" | "high" | "medium" | "low",
-  "mitre_technique": "MITRE ATT&CK ID and Name (e.g., T1059: Command and Scripting Interpreter)",
+  "mitre_technique": "Just the MITRE ID and Name (e.g., T1490: Inhibit System Recovery)",
   "reason": "Detailed explanation of why (max 4 sentences). Mention specific IOCs if present.",
   "recommendation": "Actionable next step for the SOC team (e.g., Block IP, Isolate host, Ignore)."
 }
@@ -23,8 +23,12 @@ CRITICAL RULES:
 - Reverse shells (e.g., '/dev/tcp/', 'nc -e') -> ALWAYS malicious, MITRE T1059.
 - SQL Injection (e.g., 'OR 1=1') -> ALWAYS malicious, MITRE T1190.
 - PowerShell downloading from the internet -> ALWAYS malicious, MITRE T1059.001.
-- Brute Force (e.g., 'Failed password', 'multiple failed logins', '5 intentos') -> ALWAYS suspicious, MITRE T1110.
+- Brute Force (e.g., 'Failed password') -> ALWAYS suspicious, MITRE T1110.
 - Normal HTTP traffic -> ALWAYS benign, MITRE N/A.
+
+CRITICAL FORMATTING RULE: 
+For the "mitre_technique" field, output ONLY the technique ID and Name. 
+DO NOT include the text "MITRE ATT&CK ID and Name" or "e.g." in your response.
 """
 
 VERDICT_SCHEMA = {

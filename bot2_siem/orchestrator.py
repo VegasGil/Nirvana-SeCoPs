@@ -3,10 +3,12 @@
 import json
 import logging
 import os
+import time
 import requests
 from pathlib import Path
 from jsonschema import ValidationError, validate
 
+from bot5_endpoint.defender_parser import parse_defender_alert
 from bot1_cerebro.event_schema import INPUT_SCHEMA, normalize_event
 from bot1_cerebro.soc_assistant import triage
 from bot2_siem.splunk_client import hec_send, search
@@ -86,7 +88,14 @@ def process_batch(rows: list[dict]) -> dict:
 
     for row in rows:
         try:
-            event = splunk_to_event(row)
+            # --- ROUTING DE MULTI-FUENTE ---
+            # Si viene de Defender (con el nombre exacto que vimos en Splunk), usamos su parser
+            if row.get("sourcetype") in ["ms-defender", "ms:defender:atp", "ms:defender:atp:alerts"]:
+                event = parse_defender_alert(row)
+            else:
+                # Si es un evento nuestro normal, usamos el mapeo estándar
+                event = splunk_to_event(row)
+                
             validate(instance=event, schema=INPUT_SCHEMA)
         except (ValidationError, ValueError) as e:
             log.warning("Invalid event skipped: %s", e)
@@ -100,7 +109,7 @@ def process_batch(rows: list[dict]) -> dict:
                 stats["skipped_dup"] += 1
                 continue
 
-            # Aquí se llama a la IA del Bot 1
+            # Llamamos a la IA del Bot 1
             verdict = triage(event)
             event_text = event.get("summary", "")
             
@@ -109,13 +118,12 @@ def process_batch(rows: list[dict]) -> dict:
                 send_to_slack(event_text, verdict, event.get("source", "Unknown"))
             
             # Guardar en Splunk
-                      # Guardar en Splunk
             output = {
                 "event_id": eid,
                 "source_kind": event["source"],
                 "verdict": verdict["verdict"],
                 "severity": verdict["severity"],
-                "mitre_technique": verdict.get("mitre_technique", "N/A"), # <-- NUEVO
+                "mitre_technique": verdict.get("mitre_technique", "N/A"),
                 "reason": verdict["reason"],
                 "recommendation": verdict.get("recommendation", "None"),
                 "model": "qwen2.5:3b",
@@ -141,12 +149,12 @@ def process_batch(rows: list[dict]) -> dict:
 # ==========================================
 def run_once() -> dict:
     last_time = load_checkpoint()
-    q = f'index=* sourcetype="{SRC_SOURCETYPE}" | sort 0 _time'
+    # Buscamos nuestros eventos normales O las alertas reales de Defender
+    q = f'index=* (sourcetype="{SRC_SOURCETYPE}" OR sourcetype="ms:defender:atp:alerts") | sort 0 _time'
     rows = search(q, earliest=last_time)
     return process_batch(rows)
 
 if __name__ == "__main__":
-    import time
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     log.info("Orchestrator Bot 2 started. Polling every 10s.")
     while True:

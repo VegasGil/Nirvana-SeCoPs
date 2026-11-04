@@ -1,0 +1,19 @@
+{
+  "id": "da637728392318377235_123456789",
+  "title": "Ransomware behavior detected",
+  "description": "This process attempted to delete shadow copies using vssadmin.",
+  "severity": "High",
+  "createdDateTime": "2026-11-04T14:00:00Z",
+  "mitreTechniques": ["T1490"],
+  "devices": [
+    {
+      "deviceDnsName": "PC-VICTIMA-01.corp.local"
+    }
+  ],
+  "evidence": [
+    {
+      "ipAddress": "185.15.20.10",
+      "fileSha256": "24d004a104d4d54034dbcffc2a4b19a11f1ae11c"
+    }
+  ]
+}
