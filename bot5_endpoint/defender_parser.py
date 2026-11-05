@@ -53,10 +53,6 @@ def parse_defender_alert(alert: dict) -> dict:
                 if sha and isinstance(sha, str):
                     iocs.append(sha)
             
-    threat_name = alert.get("threatName")
-    if threat_name and isinstance(threat_name, str):
-        iocs.append(threat_name)
-
     # Generar un ID único
     event_id = hashlib.md5(f"{alert_id}-{device_name}-{title}".encode()).hexdigest()
 

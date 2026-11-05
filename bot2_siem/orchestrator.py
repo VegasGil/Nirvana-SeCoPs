@@ -12,6 +12,7 @@ from bot5_endpoint.defender_parser import parse_defender_alert
 from bot1_cerebro.event_schema import INPUT_SCHEMA, normalize_event
 from bot1_cerebro.soc_assistant import triage
 from bot2_siem.splunk_client import hec_send, search
+from bot3_intel.threat_intel import enrich_event_iocs
 
 log = logging.getLogger("orchestrator")
 
@@ -45,7 +46,7 @@ def send_to_slack(event_text, ai_verdict, source_name):
         "blocks": [
             {"type": "header", "text": {"type": "plain_text", "text": f"🚨 Alerta SOC - {source_name}"}},
             {"type": "section", "text": {"type": "mrkdwn", "text": f"*Evento:*\n`{event_text}`"}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": f"*Veredicto:* {ai_verdict['verdict'].upper()}\n*Severidad:* {ai_verdict['severity'].upper()}\n*MITRE ATT&CK:* {ai_verdict.get('mitre_technique', 'N/A')}\n*Razón:* {ai_verdict['reason']}"}},
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"*Veredicto:* {ai_verdict['verdict'].upper()}\n*Severidad:* {ai_verdict['severity'].upper()}\n*MITRE ATT&CK:* {ai_verdict.get('mitre_technique', 'N/A')}\n*Razón:* {ai_verdict['reason']}\n*🛡️ DFIR:* {ai_verdict.get('dfir_actions', 'N/A')}"}},
             {"type": "actions", "elements": [
                 {"type": "button", "text": {"type": "plain_text", "text": "✅ Aprobar"}, "style": "primary", "value": "approve"},
                 {"type": "button", "text": {"type": "plain_text", "text": "🚫 Ignorar"}, "style": "danger", "value": "ignore"}
@@ -88,15 +89,22 @@ def process_batch(rows: list[dict]) -> dict:
 
     for row in rows:
         try:
-            # --- ROUTING DE MULTI-FUENTE ---
-            # Si viene de Defender (con el nombre exacto que vimos en Splunk), usamos su parser
+            # --- 1. ROUTING DE MULTI-FUENTE ---
             if row.get("sourcetype") in ["ms-defender", "ms:defender:atp", "ms:defender:atp:alerts"]:
                 event = parse_defender_alert(row)
             else:
-                # Si es un evento nuestro normal, usamos el mapeo estándar
                 event = splunk_to_event(row)
                 
             validate(instance=event, schema=INPUT_SCHEMA)
+            
+            # --- 2. NUEVO: ENRIQUECIMIENTO CON VIRUSTOTAL ---
+            if event.get("iocs"):
+                log.info("Enriqueciendo %d IOCs con Threat Intel...", len(event["iocs"]))
+                _, vt_context = enrich_event_iocs(event["iocs"])
+                if vt_context:
+                    # Guardamos el contexto de VT en el campo 'raw' para que Ollama lo lea
+                    event["raw"]["threat_intel_context"] = vt_context
+            
         except (ValidationError, ValueError) as e:
             log.warning("Invalid event skipped: %s", e)
             stats["skipped_invalid"] += 1
@@ -109,7 +117,7 @@ def process_batch(rows: list[dict]) -> dict:
                 stats["skipped_dup"] += 1
                 continue
 
-            # Llamamos a la IA del Bot 1
+            # 3. Llamamos a la IA del Bot 1
             verdict = triage(event)
             event_text = event.get("summary", "")
             
@@ -117,7 +125,7 @@ def process_batch(rows: list[dict]) -> dict:
             if verdict['verdict'] in ['malicious', 'suspicious']:
                 send_to_slack(event_text, verdict, event.get("source", "Unknown"))
             
-            # Guardar en Splunk
+            # 4. Guardar en Splunk
             output = {
                 "event_id": eid,
                 "source_kind": event["source"],
@@ -125,6 +133,7 @@ def process_batch(rows: list[dict]) -> dict:
                 "severity": verdict["severity"],
                 "mitre_technique": verdict.get("mitre_technique", "N/A"),
                 "reason": verdict["reason"],
+                "dfir_actions": verdict.get("dfir_actions", "N/A"),
                 "recommendation": verdict.get("recommendation", "None"),
                 "model": "qwen2.5:3b",
             }

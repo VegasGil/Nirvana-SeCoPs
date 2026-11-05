@@ -1,27 +1,20 @@
-import sys
-import os
 import json
+import pytest
+from bot5_endpoint.defender_parser import parse_defender_alert
+from bot1_cerebro.event_schema import INPUT_SCHEMA
+from jsonschema import validate
 
-# Arreglo de rutas
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+def test_parse_defender_alert():
+    # Lee el archivo local que creamos en data/samples/
+    with open("data/samples/defender_alert.json", "r") as f:
+        raw_alert = json.load(f)
 
-from bot2_siem.splunk_client import search
-from bot2_siem.orchestrator import process_batch
+    event = parse_defender_alert(raw_alert)
 
-def run():
-    print("🔍 Buscando alertas de Defender en las últimas 24h...")
-    # Usamos comillas simples en la consulta para evitar problemas
-    query = 'index=* sourcetype="ms:defender:atp:alerts"'
-    rows = search(query, earliest="-24h")
+    # Valida que el resultado cumpla con las reglas del proyecto
+    validate(instance=event, schema=INPUT_SCHEMA)
     
-    print(f"✅ Encontradas {len(rows)} alertas en Splunk.")
-    
-    if len(rows) > 0:
-        print("🧠 Enviando a la IA y Slack...")
-        stats = process_batch(rows)
-        print(json.dumps(stats, indent=2))
-    else:
-        print("⚠️ No se encontraron alertas en ese rango de tiempo.")
-
-if __name__ == "__main__":
-    run()
+    # Verifica que los datos se extrajeron bien
+    assert event["source"] == "endpoint"
+    assert "PC-VICTIMA-01" in event["src"]
+    assert "Ransomware behavior detected" in event["summary"]
