@@ -24,6 +24,10 @@ CRITICAL RULES:
 - If it's an EDR alert (HackTool, Cryptominer, Ransomware) -> Focus on technical impact and DFIR steps.
 - Provide concrete DFIR commands or steps to investigate in 'dfir_actions'.
 - For Benign events, dfir_actions can be "None".
+- Ransomware activity (e.g., 'vssadmin delete shadows') -> ALWAYS malicious, MITRE T1490.
+- SQL Injection attempts (e.g., 'OR 1=1') -> ALWAYS malicious, MITRE T1190.
+
+/no_think
 """
 
 VERDICT_SCHEMA = {
