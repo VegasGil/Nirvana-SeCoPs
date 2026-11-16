@@ -14,7 +14,7 @@
 
 El proyecto está diseñado de forma modular. Cada "Bot" tiene una responsabilidad única, lo que permite escalarlo sin romper el sistema.
 
-```mermaid
+
 graph LR
     A[Email / Logs] -->|Ingesta| B(Bot 4: Human Vector)
     B -->|Extrae IOCs| C(Bot 3: Threat Intel)
