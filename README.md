@@ -15,15 +15,6 @@
 El proyecto está diseñado de forma modular. Cada "Bot" tiene una responsabilidad única, lo que permite escalarlo sin romper el sistema.
 
 
-graph LR
-    A[Email / Logs] -->|Ingesta| B(Bot 4: Human Vector)
-    B -->|Extrae IOCs| C(Bot 3: Threat Intel)
-    C <-->|API| VT[VirusTotal]
-    B -->|Envía Contexto| D(Bot 1: Cerebro / Ollama)
-    D -->|Veredicto JSON| E(Bot 2: SIEM / Splunk)
-    E -->|Indexa Alerta| E
-    D -->|Alerta HITL| F[Slack / Human-in-the-loop]
-
 🤖 Los Bots (Componentes)
 
     Bot 1 (Cerebro): Utiliza el LLM local qwen2.5:3b vía Ollama. Recibe el evento, lo analiza con reglas MITRE ATT&CK y devuelve un JSON estricto (verdict, severity, reason, recommendation).
